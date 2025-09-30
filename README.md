@@ -18,57 +18,46 @@ End the program
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
 
-df = pd.read_csv(r"C:\Users\admin\Downloads\asiacup.csv")
+# Load the data
+data = pd.read_csv('XAUUSD_2010-2023.csv')
 
-YEAR_COL = "Year"
-WICKETS_COL = "Wicket Lost"
+# Convert date to datetime with the correct format and sort
+data['Date'] = pd.to_datetime(data['time'], format='%d-%m-%Y %H:%M', dayfirst=True)
+data.sort_values('Date', inplace=True)
 
-df[YEAR_COL] = pd.to_numeric(df[YEAR_COL], errors="coerce")
-yearly_wickets = df.groupby(YEAR_COL)[WICKETS_COL].mean().reset_index()
-yearly_wickets.rename(columns={YEAR_COL: 'year', WICKETS_COL: 'avg_wickets_lost'}, inplace=True)
-yearly_wickets = yearly_wickets[yearly_wickets['year'] >= yearly_wickets['year'].max() - 50]
+# Filter data for a specific range (e.g., 1 year)
+start_date = '2010-01-01'
+end_date = '2011-01-01'
+filtered_data = data[(data['Date'] >= start_date) & (data['Date'] <= end_date)]
 
-X = yearly_wickets["year"].values.reshape(-1, 1)
-y = yearly_wickets["avg_wickets_lost"].values
-X_norm = X - X.min()
+# Extract date and price for the filtered range
+dates = filtered_data['Date']
+prices = filtered_data['close']
 
-linear_model = LinearRegression()
-linear_model.fit(X_norm, y)
-y_pred_linear = linear_model.predict(X_norm)
+# Calculate linear trend
+coeffs_linear = np.polyfit(np.arange(len(prices)), prices, 1)
+linear_trend = np.polyval(coeffs_linear, np.arange(len(prices)))
 
-poly = PolynomialFeatures(degree=3)
-X_poly = poly.fit_transform(X_norm)
-poly_model = LinearRegression()
-poly_model.fit(X_poly, y)
+# Calculate polynomial trend (degree 2)
+coeffs_poly = np.polyfit(np.arange(len(prices)), prices, 2)
+poly_trend = np.polyval(coeffs_poly, np.arange(len(prices)))
 
-X_range = np.linspace(X_norm.min(), X_norm.max(), 300).reshape(-1, 1)
-X_range_poly = poly.transform(X_range)
-y_pred_poly_smooth = poly_model.predict(X_range_poly)
-
-plt.figure(figsize=(10,5))
-plt.scatter(X, y, color="blue", label="Actual Data")
-plt.plot(X, y_pred_linear, color="red", label="Linear Trend")
-plt.xlabel("Year")
-plt.ylabel("Average Wickets Lost")
+# Plotting
+plt.figure(figsize=(12, 6))
+plt.plot(dates, prices, color='blue', alpha=0.3, label='Original Data')  # Use transparency
+plt.plot(dates, linear_trend, color='red', linewidth=2, label='Linear Trend')
+plt.plot(dates, poly_trend, color='green', linewidth=2, label='Polynomial Trend (Degree 2)')
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.title('Linear and Polynomial Trend Estimation (Shortened Data)')
 plt.legend()
-plt.grid(True)
-plt.show()
-
-plt.figure(figsize=(10,5))
-plt.scatter(X, y, color="blue", label="Actual Data")
-plt.plot(X_range + X.min(), y_pred_poly_smooth, color="green", linestyle="--", label="Polynomial Trend")
-plt.xlabel("Year")
-plt.ylabel("Average Wickets Lost")
-plt.legend()
-plt.grid(True)
 plt.show()
 ~~~
 
 ### OUTPUT
-<img width="572" height="568" alt="image" src="https://github.com/user-attachments/assets/cce038c9-6a40-43f0-b3b5-d5dd1722405b" />
+<img width="1264" height="687" alt="image" src="https://github.com/user-attachments/assets/0dfd30f3-e749-4ef4-a4e6-c72cce18b641" />
+<img width="1263" height="691" alt="image" src="https://github.com/user-attachments/assets/1a4b15c6-5c6f-4e69-94a0-f35815afdbe1" />
 
 
 ### RESULT:
